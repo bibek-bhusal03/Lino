@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useAppStore } from "../../store/appStore";
 import { PackageInfo } from "../../types";
-import { Check, Download, ArrowUpCircle, Loader2 } from "lucide-react";
+import { Check, Download, ArrowUpCircle, Circle } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { formatSize } from "../../utils/formatSize";
+import Button from "../ui/Button";
+import EmptyState from "../ui/EmptyState";
 
 interface PackageListProps {
   packages: PackageInfo[];
@@ -25,29 +28,25 @@ export default function PackageList({ packages }: PackageListProps) {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       useAppStore.getState().selectAll(packages.map((p) => p.name));
-      addToast(`${packages.length} packages selected`, "info");
     } else {
       useAppStore.getState().clearSelection();
     }
   };
+
+  const allSelected = packages.length > 0 && selectedPackages.size === packages.length;
 
   const handleUpgrade = async (name: string) => {
     if (!config.selectedManager || upgradingPkg) return;
     setUpgradingPkg(name);
     setInstallingPackage(name);
     try {
-      const result = await invoke<any>("upgrade_package", {
-        manager: config.selectedManager,
-        name,
-      });
+      const result = await invoke<any>("upgrade_package", { manager: config.selectedManager, name });
       if (result.success) {
         addToast(`${name} upgraded successfully`, "success");
       } else {
         addToast(`Failed to upgrade ${name}: ${result.error || "unknown error"}`, "error");
       }
-      const updatedPackages = await invoke<any[]>("list_packages", {
-        manager: config.selectedManager,
-      });
+      const updatedPackages = await invoke<any[]>("list_packages", { manager: config.selectedManager });
       setPackages(updatedPackages);
     } catch (error) {
       console.error("Failed to upgrade:", error);
@@ -58,122 +57,113 @@ export default function PackageList({ packages }: PackageListProps) {
     }
   };
 
-  const formatSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  };
-
   return (
     <div className="flex-1 overflow-y-auto">
-      <table className="w-full">
-        <thead className="sticky top-0 bg-surface border-b border-border z-10">
-          <tr>
-            <th className="w-10 px-4 py-3 text-left">
-              <input
-                type="checkbox"
-                className="w-4 h-4 rounded border-border bg-background"
-                onChange={(e) => handleSelectAll(e.target.checked)}
-              />
+      <table className="w-full border-collapse">
+        <thead className="sticky top-0 z-10">
+          <tr className="bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800/50">
+            <th className="w-12 px-4 py-3.5 text-left">
+              <div className="flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-blue-500 focus:ring-blue-500/30 focus:ring-offset-0"
+                />
+              </div>
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+            <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
               Name
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+            <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
               Description
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-24">
+            <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-28">
               Version
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-24">
+            <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-20">
               Size
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-24">
+            <th className="px-4 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-32">
               Status
             </th>
           </tr>
         </thead>
         <tbody>
-          {packages.map((pkg) => {
+          {packages.map((pkg, index) => {
             const isSelected = selectedPackage?.name === pkg.name;
-            const isBulkSelected = selectedPackages.includes(pkg.name);
+            const isBulkSelected = selectedPackages.has(pkg.name);
             return (
               <tr
                 key={pkg.name}
                 onClick={() => setSelectedPackage(pkg)}
                 className={`
-                  border-b border-border/50 cursor-pointer transition-colors
-                  ${isSelected ? "bg-primary/5" : "hover:bg-surface-hover"}
-                  ${isBulkSelected ? "bg-primary/10" : ""}
+                  border-b border-zinc-800/30 cursor-pointer transition-all duration-150
+                  ${index % 2 === 0 ? "bg-zinc-900/30" : "bg-transparent"}
+                  ${isSelected ? "bg-blue-500/5" : "hover:bg-zinc-800/30"}
+                  ${isBulkSelected ? "bg-blue-500/10" : ""}
                 `}
               >
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={isBulkSelected}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      togglePackageSelection(pkg.name);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 rounded border-border bg-background"
-                  />
+                <td className="px-4 py-3 w-12">
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={isBulkSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        togglePackageSelection(pkg.name);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-blue-500 focus:ring-blue-500/30 focus:ring-offset-0"
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-sm font-medium text-text">
-                    {pkg.name}
-                  </span>
+                  <span className="text-sm font-medium text-zinc-200">{pkg.name}</span>
+                </td>
+                <td className="px-4 py-3 max-w-xs">
+                  <span className="text-sm text-zinc-500 line-clamp-1">{pkg.description || "-"}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-sm text-text-secondary line-clamp-1">
-                    {pkg.description}
-                  </span>
+                  <span className="text-xs text-zinc-500 font-mono">{pkg.version}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs text-text-muted font-mono">
-                    {pkg.version}
-                  </span>
+                  <span className="text-xs text-zinc-500">{formatSize(pkg.installedSize || pkg.size || 0)}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs text-text-muted">
-                    {formatSize(pkg.installedSize || pkg.size || 0)}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     {pkg.isInstalled && (
-                      <span className="flex items-center gap-1 text-xs text-success">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-800 text-zinc-400">
                         <Check className="w-3 h-3" />
                         Installed
                       </span>
                     )}
                     {pkg.isUpgradable && (
-                      <div className="flex items-center gap-1">
-                        <span className="flex items-center gap-1 text-xs text-warning">
+                      <>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400">
                           <ArrowUpCircle className="w-3 h-3" />
                           Update
                         </span>
-                        <button
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleUpgrade(pkg.name);
                           }}
                           disabled={!!upgradingPkg || !!installingPackage}
-                          className="ml-1 p-0.5 rounded bg-warning/20 hover:bg-warning/30 text-warning disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          title={`Upgrade ${pkg.name} to ${pkg.version}`}
+                          isLoading={upgradingPkg === pkg.name}
+                          variant="secondary"
+                          size="sm"
+                          icon={upgradingPkg === pkg.name ? undefined : <ArrowUpCircle className="w-3.5 h-3.5" />}
+                          className="bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                          title={`Upgrade to ${pkg.version}`}
                         >
-                          {upgradingPkg === pkg.name ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <ArrowUpCircle className="w-3 h-3" />
-                          )}
-                        </button>
-                      </div>
+                          Update
+                        </Button>
+                      </>
                     )}
                     {!pkg.isInstalled && (
-                      <span className="flex items-center gap-1 text-xs text-text-muted">
-                        <Download className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-800/50 text-zinc-500">
+                        <Circle className="w-3 h-3" />
                         Available
                       </span>
                     )}
@@ -186,10 +176,12 @@ export default function PackageList({ packages }: PackageListProps) {
       </table>
 
       {packages.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-          <Download className="w-12 h-12 mb-4 opacity-50" />
-          <p className="text-lg font-medium">No packages found</p>
-          <p className="text-sm mt-1">Try adjusting your search or filters</p>
+        <div className="p-6">
+          <EmptyState
+            icon={<Download className="w-12 h-12 text-zinc-500" />}
+            title="No packages found"
+            description="Try adjusting your search, filters, or selecting a different view."
+          />
         </div>
       )}
     </div>

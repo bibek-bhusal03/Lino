@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAppStore } from "../../store/appStore";
 import { invoke } from "@tauri-apps/api/core";
-import { Search, Loader2, History, Clock } from "lucide-react";
+import { Loader2, History, Clock, Package } from "lucide-react";
 
 const PAGE_SIZE = 20;
 const MAX_HISTORY = 10;
@@ -129,9 +129,7 @@ export default function SearchTab() {
 
   useEffect(() => {
     return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
@@ -139,42 +137,29 @@ export default function SearchTab() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border">
+      <div className="px-5 py-3 border-b border-zinc-800/50">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              if (e.target.value.trim() && history.length > 0) {
-                setShowHistory(false);
-              }
+              if (e.target.value.trim() && history.length > 0) setShowHistory(false);
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearchSubmit();
-              }
-            }}
-            onFocus={() => {
-              if (!query.trim() && history.length > 0) {
-                setShowHistory(true);
-              }
-            }}
-            onBlur={() => {
-              setTimeout(() => setShowHistory(false), 200);
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSearchSubmit(); }}
+            onFocus={() => { if (!query.trim() && history.length > 0) setShowHistory(true); }}
+            onBlur={() => setTimeout(() => setShowHistory(false), 200)}
             placeholder="Search for packages by name or description..."
-            className="w-full pl-10 pr-4 py-3 rounded-lg bg-background border border-border text-text text-sm focus:outline-none focus:border-primary placeholder:text-text-muted"
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 text-sm focus:outline-none focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600/30 placeholder:text-zinc-600 transition-all"
             autoFocus
           />
           {isSearching ? (
-            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted animate-spin" />
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 animate-spin" />
           ) : (
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
               title="Search history"
             >
               <History className="w-4 h-4" />
@@ -182,13 +167,10 @@ export default function SearchTab() {
           )}
 
           {showHistory && history.length > 0 && !isSearching && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-lg shadow-lg z-50 overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-                <span className="text-xs font-medium text-text-muted">Recent Searches</span>
-                <button
-                  onClick={handleClearHistory}
-                  className="text-xs text-text-muted hover:text-danger transition-colors"
-                >
+            <div className="absolute top-full left-0 right-0 mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
+                <span className="text-xs font-medium text-zinc-500">Recent Searches</span>
+                <button onClick={handleClearHistory} className="text-xs text-zinc-500 hover:text-red-400 transition-colors cursor-pointer">
                   Clear all
                 </button>
               </div>
@@ -196,9 +178,9 @@ export default function SearchTab() {
                 <button
                   key={i}
                   onClick={() => handleHistoryClick(item)}
-                  className="w-full text-left px-3 py-2 text-sm text-text hover:bg-surface-hover transition-colors flex items-center gap-2"
+                  className="w-full text-left px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/50 transition-colors flex items-center gap-2.5 cursor-pointer"
                 >
-                  <Clock className="w-3 h-3 text-text-muted shrink-0" />
+                  <Clock className="w-3 h-3 text-zinc-600 shrink-0" />
                   <span className="truncate">{item}</span>
                 </button>
               ))}
@@ -207,40 +189,36 @@ export default function SearchTab() {
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto"
-      >
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
         {isSearching && query.trim() && (
-          <div className="flex items-center justify-center py-20 text-text-muted">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <div className="flex items-center justify-center py-20 text-zinc-500">
+            <Loader2 className="w-5 h-5 animate-spin mr-2.5" />
             Searching...
           </div>
         )}
 
         {!isSearching && query.trim() && searchResults.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-            <Search className="w-12 h-12 mb-4 opacity-50" />
-            <p className="text-lg font-medium">No packages found</p>
+          <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
+            <Package className="w-10 h-10 mb-4 opacity-40" />
+            <p className="text-base font-medium">No packages found</p>
             <p className="text-sm mt-1">Try a different search term</p>
           </div>
         )}
 
         {!query.trim() && (
-          <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-            <Search className="w-16 h-16 mb-4 opacity-30" />
-            <p className="text-lg font-medium">Search for packages</p>
+          <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
+            <Package className="w-14 h-14 mb-4 opacity-30" />
+            <p className="text-base font-medium">Search for packages</p>
             <p className="text-sm mt-1">Type to search across all repositories</p>
             {history.length > 0 && (
-              <div className="mt-4 w-full max-w-sm">
-                <p className="text-xs font-medium text-text-muted mb-2">Recent searches</p>
+              <div className="mt-5 w-full max-w-sm">
+                <p className="text-xs font-medium text-zinc-500 mb-2.5 text-center">Recent searches</p>
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {history.slice(0, 5).map((item, i) => (
                     <button
                       key={i}
                       onClick={() => handleHistoryClick(item)}
-                      className="px-2 py-1 rounded-md bg-background border border-border text-xs text-text-secondary hover:text-primary hover:border-primary transition-colors"
+                      className="px-2.5 py-1 rounded-lg bg-zinc-800/50 border border-zinc-800 text-xs text-zinc-500 hover:text-blue-400 hover:border-zinc-600 transition-all cursor-pointer"
                     >
                       {item}
                     </button>
@@ -252,19 +230,19 @@ export default function SearchTab() {
         )}
 
         {visibleResults.length > 0 && (
-          <table className="w-full">
-            <thead className="sticky top-0 bg-surface border-b border-border z-10">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+          <table className="w-full border-collapse">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800/50">
+                <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider">
+                <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-28">
+                <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-28">
                   Version
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase tracking-wider w-20">
+                <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-zinc-500 uppercase tracking-wider w-24">
                   Status
                 </th>
               </tr>
@@ -274,28 +252,22 @@ export default function SearchTab() {
                 <tr
                   key={pkg.name}
                   onClick={() => setSelectedPackage(pkg)}
-                  className="border-b border-border/50 cursor-pointer transition-colors hover:bg-surface-hover"
+                  className="border-b border-zinc-800/30 cursor-pointer transition-colors hover:bg-zinc-800/30"
                 >
-                  <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-text">
-                      {pkg.name}
-                    </span>
+                  <td className="px-5 py-3">
+                    <span className="text-sm font-medium text-zinc-200">{pkg.name}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-sm text-text-secondary line-clamp-1">
-                      {pkg.description}
-                    </span>
+                  <td className="px-5 py-3">
+                    <span className="text-sm text-zinc-500 line-clamp-1">{pkg.description || "-"}</span>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs text-text-muted font-mono">
-                      {pkg.version || "N/A"}
-                    </span>
+                  <td className="px-5 py-3">
+                    <span className="text-xs text-zinc-500 font-mono">{pkg.version || "N/A"}</span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     {pkg.isInstalled ? (
-                      <span className="text-xs text-success">Installed</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-800 text-zinc-400">Installed</span>
                     ) : (
-                      <span className="text-xs text-text-muted">Available</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-zinc-800/50 text-zinc-600">Available</span>
                     )}
                   </td>
                 </tr>
@@ -305,7 +277,7 @@ export default function SearchTab() {
         )}
 
         {displayedCount < searchResults.length && (
-          <div className="py-4 text-center text-text-muted text-sm">
+          <div className="py-4 text-center text-zinc-600 text-sm">
             Scroll to load more ({searchResults.length - displayedCount} remaining)
           </div>
         )}

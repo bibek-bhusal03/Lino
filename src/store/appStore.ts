@@ -18,7 +18,7 @@ interface AppState {
   packages: PackageInfo[];
   filteredPackages: PackageInfo[];
   selectedPackage: PackageInfo | null;
-  selectedPackages: string[];
+  selectedPackages: Set<string>;
   activeTab: TabType;
   filter: PackageFilter;
   isLoading: boolean;
@@ -69,7 +69,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   packages: [],
   filteredPackages: [],
   selectedPackage: null,
-  selectedPackages: [],
+  selectedPackages: new Set<string>(),
   activeTab: "installed",
   filter: defaultFilter,
   isLoading: false,
@@ -141,15 +141,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSelectedPackage: (pkg) => set({ selectedPackage: pkg }),
 
   togglePackageSelection: (name) =>
-    set((state) => ({
-      selectedPackages: state.selectedPackages.includes(name)
-        ? state.selectedPackages.filter((n) => n !== name)
-        : [...state.selectedPackages, name],
-    })),
+    set((state) => {
+      const next = new Set(state.selectedPackages);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return { selectedPackages: next };
+    }),
 
-  clearSelection: () => set({ selectedPackages: [] }),
+  clearSelection: () => set({ selectedPackages: new Set<string>() }),
 
-  selectAll: (names) => set({ selectedPackages: [...names] }),
+  selectAll: (names) => set({ selectedPackages: new Set(names) }),
 
   setActiveTab: (tab) => {
     const { packages, filter } = get();

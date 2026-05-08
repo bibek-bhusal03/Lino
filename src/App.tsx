@@ -61,6 +61,21 @@ function App() {
   }, [config.selectedManager, showManagerSelection, loadPackages]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        const input = document.querySelector<HTMLInputElement>(
+          'input[placeholder*="Search"]'
+        );
+        input?.focus();
+        input?.select();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     const root = document.documentElement;
     const darkColors: Record<string, string> = {
       "--color-background": "#0f1117",
@@ -205,14 +220,14 @@ function App() {
 
   if (!isTauri) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-8">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 p-8">
         <div className="max-w-lg text-center">
-          <h1 className="text-3xl font-bold text-text mb-4">Lino</h1>
-          <p className="text-text-secondary mb-6">
+          <h1 className="text-3xl font-bold text-zinc-200 mb-4">Lino</h1>
+          <p className="text-zinc-500 mb-6">
             This app must be run inside the Tauri desktop window.
           </p>
-          <p className="text-text-muted text-sm">
-            You're viewing the dev server in a browser. The actual Tauri window should have opened automatically when you ran <code className="bg-surface px-2 py-1 rounded text-primary text-xs">npm run tauri dev</code>.
+          <p className="text-zinc-600 text-sm">
+            You're viewing the dev server in a browser. The actual Tauri window should have opened automatically when you ran <code className="bg-zinc-900 px-2 py-1 rounded text-blue-400 text-xs">npm run tauri dev</code>.
           </p>
         </div>
       </div>
@@ -224,7 +239,7 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-background">
+    <div className="flex flex-col h-screen w-screen bg-zinc-950">
       <TopBar
         onChangeManager={() => {
           setConfig({ selectedManager: null });
